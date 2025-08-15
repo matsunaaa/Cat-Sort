@@ -589,11 +589,23 @@ calculateCatSize() {
                 break;
                 
             case 'swap':
+                let title = 'Kitties Switching Sides! 🔄';
+                let explanation = '';
+
+                // Generate explanation BEFORE the swap happens so we can refer to the correct cats.
+                if (step.reason === 'smaller than captain') {
+                    const smallerCatName = this.cats[step.index2].name;
+                    explanation = `${smallerCatName} is smaller than the captain, so they're moving to the left (sorted) side.`;
+                } else if (step.reason === 'moving captain to the end for partitioning') {
+                    const pivotCatName = this.cats[step.index1].name;
+                    title = 'Preparing to Partition! 📋';
+                    explanation = `First, let's move captain ${pivotCatName} to the end to get them out of the way for now.`;
+                }
+
                 this.highlightCats([step.index1, step.index2]);
                 await this.swap(step.index1, step.index2);
                 this.swaps++;
-                this.updateExplanation(`Kitties Switching Sides! 🔄`, 
-                    `${this.cats[step.index2].name} is ${step.reason}, so they're moving to the left side!`);
+                this.updateExplanation(title, explanation);
                 break;
                 
             case 'place-pivot':
