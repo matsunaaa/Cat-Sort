@@ -40,6 +40,16 @@ class CatSorter {
         this.quickSteps = [];
         this.quickStepIndex = 0;
         
+        // Add resize listener
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                this.render();
+                this.restoreSortedStates();
+            }, 250); // Debounce resize events
+        });
+        
         this.initializeEventListeners();
         this.render();
     }
@@ -113,29 +123,51 @@ class CatSorter {
         this.render();
         this.updateExplanation('Cats Randomized! 🎲', 'The kitties are all mixed up! Now choose a sorting algorithm from the left to organize them by height!');
     }
+
+render() {
+    const container = document.getElementById('cat-container');
+    container.innerHTML = '';
     
-    render() {
-        const container = document.getElementById('cat-container');
-        container.innerHTML = '';
+    // Calculate base size for responsive scaling
+    const baseSize = this.calculateCatSize();
+    
+    this.cats.forEach((cat, index) => {
+        const catCard = document.createElement('div');
+        catCard.className = 'cat-card';
+        catCard.id = `cat-${index}`;
         
-        this.cats.forEach((cat, index) => {
-            const catCard = document.createElement('div');
-            catCard.className = 'cat-card';
-            catCard.id = `cat-${index}`;
-            
-            // Calculate emoji size based on height (40px to 80px range)
-            const emojiSize = 30 + (cat.height / 220) * 50;
-            
-            catCard.innerHTML = `
-                <div class="cat-index">${index}</div>
-                <div class="cat-emoji" style="font-size: ${emojiSize}px">${cat.emoji}</div>
-                <div class="cat-name">${cat.name}</div>
-                <div class="cat-height">${cat.height}cm</div>
-            `;
-            
-            container.appendChild(catCard);
-        });
-    }
+        // Calculate emoji size based on height and responsive base size
+        const heightRatio = cat.height / 220; // 220 is max height
+        const emojiSize = baseSize * 0.5 + (baseSize * 0.5 * heightRatio);
+        
+        catCard.innerHTML = `
+            <div class="cat-index">${index}</div>
+            <div class="cat-emoji" style="font-size: ${emojiSize}px">${cat.emoji}</div>
+            <div class="cat-name">${cat.name}</div>
+            <div class="cat-height">${cat.height}cm</div>
+        `;
+        
+        container.appendChild(catCard);
+    });
+}
+
+calculateCatSize() {
+    const container = document.getElementById('cat-container');
+    const containerWidth = container.clientWidth;
+    const numCats = this.cats.length;
+    
+    // Calculate available width per cat (with gaps)
+    const gapSize = parseInt(window.getComputedStyle(container).gap) || 10;
+    const totalGaps = gapSize * (numCats - 1);
+    const availableWidth = containerWidth - 40; // 40px for padding
+    const widthPerCat = (availableWidth - totalGaps) / numCats;
+    
+    // Calculate emoji size based on available space
+    // Min: 20px, Max: 80px
+    const baseEmojiSize = Math.min(80, Math.max(20, widthPerCat * 0.7));
+    
+    return baseEmojiSize;
+}
     
     async step() {
         switch(this.currentAlgorithm) {
