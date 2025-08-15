@@ -511,8 +511,17 @@ calculateCatSize() {
                 pivotIndex: pivotIndex,
                 pivot: arr[pivotIndex]
             });
+
+            // Move pivot to end and record the swap
+            [arr[pivotIndex], arr[high]] = [arr[high], arr[pivotIndex]];
+            this.quickSteps.push({
+                type: 'swap',
+                index1: pivotIndex,
+                index2: high,
+                reason: 'moving captain to the end for partitioning'
+            });
             
-            // Partition
+            // Partition (now assumes pivot is at arr[high])
             const pi = this.partition(arr, low, high);
             
             // Add partition complete step
@@ -531,15 +540,11 @@ calculateCatSize() {
     }
     
     partition(arr, low, high) {
-        const pivotIndex = Math.floor((low + high) / 2);
-        const pivot = arr[pivotIndex];
-        
-        // Move pivot to end
-        [arr[pivotIndex], arr[high]] = [arr[high], arr[pivotIndex]];
-        
+        const pivot = arr[high]; // Pivot is now always the last element
         let i = low - 1;
         
         for (let j = low; j < high; j++) {
+            // If current element is smaller than the pivot
             if (arr[j].height < pivot.height) {
                 i++;
                 [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -548,11 +553,12 @@ calculateCatSize() {
                     type: 'swap',
                     index1: i,
                     index2: j,
-                    reason: 'smaller than pivot'
+                    reason: 'smaller than captain'
                 });
             }
         }
         
+        // Place pivot in its final position
         [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
         
         this.quickSteps.push({
