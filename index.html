@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 Sorting Algorithms Explained by Cats</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐱 Sorting Algorithms Explained by Cats 🐱</h1>
+            <p class="subtitle">Watch kitties organize themselves by height!</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar with algorithm buttons -->
+            <aside class="sidebar">
+                <h2>Choose Algorithm</h2>
+                <button class="algo-btn" data-algo="bubble">
+                    <span class="emoji">🫧</span>
+                    <span>Bubble Sort</span>
+                    <small>Kitties bubble up!</small>
+                </button>
+                <button class="algo-btn" data-algo="selection">
+                    <span class="emoji">👆</span>
+                    <span>Selection Sort</span>
+                    <small>Pick the smallest kitty</small>
+                </button>
+                <button class="algo-btn" data-algo="insertion">
+                    <span class="emoji">📥</span>
+                    <span>Insertion Sort</span>
+                    <small>Insert kitty in place</small>
+                </button>
+                <button class="algo-btn" data-algo="merge">
+                    <span class="emoji">🤝</span>
+                    <span>Merge Sort</span>
+                    <small>Kitty teams merge!</small>
+                </button>
+                <button class="algo-btn" data-algo="quick">
+                    <span class="emoji">⚡</span>
+                    <span>Quick Sort</span>
+                    <small>Captain kitty divides!</small>
+                </button>
+            </aside>
+
+            <!-- Main sorting area -->
+            <main class="sorting-area">
+                <!-- Control buttons -->
+                <div class="controls">
+                    <button id="randomize" class="control-btn">
+                        <span>🎲</span> Randomize Cats
+                    </button>
+                    <button id="step" class="control-btn" disabled>
+                        <span>👣</span> Next Step
+                    </button>
+                    <button id="play" class="control-btn" disabled>
+                        <span>▶️</span> Auto Play
+                    </button>
+                    <button id="reset" class="control-btn" disabled>
+                        <span>🔄</span> Reset
+                    </button>
+                    <div class="speed-control">
+                        <label>Speed: <span id="speed-label">Medium</span></label>
+                        <input type="range" id="speed" min="1" max="5" value="3">
+                    </div>
+                </div>
+
+                <!-- Cat display area -->
+                <div id="cat-container" class="cat-container">
+                    <!-- Cats will be dynamically added here -->
+                </div>
+
+                <!-- Explanation area -->
+                <div class="explanation-box">
+                    <h3 id="step-title">Welcome! 🎉</h3>
+                    <p id="step-explanation">Click "Randomize Cats" to shuffle the kitties, then choose a sorting algorithm!</p>
+                    <div class="stats">
+                        <span>Comparisons: <strong id="comparisons">0</strong></span>
+                        <span>Swaps: <strong id="swaps">0</strong></span>
+                        <span>Current Step: <strong id="current-step">0</strong></span>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
