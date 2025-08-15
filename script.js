@@ -30,7 +30,7 @@ class CatSorter {
         // Insertion sort specific
         this.insertionOuter = 1;
         this.insertionInner = 0;
-        this.insertionKey = null;
+        this.insertionState = 'picking'; // 'picking' or 'inserting'
         
         // Merge sort specific
         this.mergeSteps = [];
@@ -309,70 +309,57 @@ calculateCatSize() {
     
     // INSERTION SORT
     async insertionSortStep() {
-        // Check if we're done
         if (this.insertionOuter >= this.cats.length) {
             this.markAllSorted();
             this.updateExplanation('All Done! 🎉', 'All the kitties are sorted! Each kitty found their perfect spot! Great job! 🐱');
             this.disableControls();
             return;
         }
-        
+
         this.clearHighlights();
-        
-        // Starting with a new cat to insert
-        if (this.insertionKey === null) {
-            this.insertionKey = {...this.cats[this.insertionOuter]};
-            this.insertionInner = this.insertionOuter - 1;
-            
-            // Mark sorted portion
-            for (let i = 0; i < this.insertionOuter; i++) {
-                document.getElementById(`cat-${i}`).classList.add('sorted');
-            }
-            
-            this.highlightCats([this.insertionOuter], 'inserting');
-            this.updateExplanation(`Inserting ${this.insertionKey.name}! 📥`, 
-                `We're going to find the right spot for ${this.insertionKey.name} (${this.insertionKey.height}cm) among the sorted kitties!`);
-            return;
+        for (let i = 0; i < this.insertionOuter; i++) {
+            document.getElementById(`cat-${i}`)?.classList.add('sorted');
         }
-        
-        // Finding the right position
-        if (this.insertionInner >= 0 && this.cats[this.insertionInner].height > this.insertionKey.height) {
-            this.highlightCats([this.insertionInner, this.insertionInner + 1]);
-            this.comparisons++;
-            
-            this.updateExplanation(`Shifting Kitties! ➡️`, 
-                `${this.cats[this.insertionInner].name} (${this.cats[this.insertionInner].height}cm) is taller than ${this.insertionKey.name}! Shifting ${this.cats[this.insertionInner].name} to the right!`);
-            
-            // Shift right
-            this.cats[this.insertionInner + 1] = this.cats[this.insertionInner];
-            this.render();
-            
-            // Restore sorted states
-            for (let i = 0; i <= this.insertionOuter; i++) {
-                if (i !== this.insertionInner + 1) {
-                    document.getElementById(`cat-${i}`).classList.add('sorted');
+
+        if (this.insertionState === 'picking') {
+            this.highlightCats([this.insertionOuter], 'inserting');
+            this.updateExplanation(`Picking ${this.cats[this.insertionOuter].name}! 📥`, `Now let's find the right spot for this kitty in the sorted section on the left.`);
+            this.insertionInner = this.insertionOuter - 1;
+            this.insertionState = 'inserting';
+        } else { // State is 'inserting'
+            if (this.insertionInner < 0) {
+                // The kitty was shifted all the way to the beginning.
+                this.updateExplanation(`In Position! ✅`, `${this.cats[0].name} has been moved to the start of the line!`);
+                this.insertionState = 'picking';
+                this.insertionOuter++;
+            } else {
+                this.highlightCats([this.insertionInner, this.insertionInner + 1]);
+                this.comparisons++;
+
+                if (this.cats[this.insertionInner].height > this.cats[this.insertionInner + 1].height) {
+                    const leftCat = this.cats[this.insertionInner];
+                    const rightCat = this.cats[this.insertionInner + 1];
+                    this.updateExplanation(`Shifting Kitty! ➡️`, `${leftCat.name} is taller than ${rightCat.name}, so let's swap them.`);
+                    await this.swap(this.insertionInner, this.insertionInner + 1);
+                    this.swaps++;
+                    this.insertionInner--;
+                } else {
+                    // This kitty is in the right place.
+                    const currentCat = this.cats[this.insertionInner + 1];
+                    this.updateExplanation(`In Position! ✅`, `${currentCat.name} has found its spot!`);
+                    this.insertionState = 'picking';
+                    this.insertionOuter++;
                 }
             }
-            
-            this.insertionInner--;
-            this.currentStep++;
-            return;
         }
-        
-        // Insert the cat
-        this.cats[this.insertionInner + 1] = this.insertionKey;
-        this.render();
-        
-        // Mark all sorted
-        for (let i = 0; i <= this.insertionOuter; i++) {
-            document.getElementById(`cat-${i}`).classList.add('sorted');
+
+        // After an insertion is complete, re-highlight the full sorted section
+        if (this.insertionState === 'picking') {
+            for (let i = 0; i < this.insertionOuter; i++) {
+                document.getElementById(`cat-${i}`)?.classList.add('sorted');
+            }
         }
-        
-        this.updateExplanation(`Perfect Spot Found! ✨`, 
-            `${this.insertionKey.name} has been inserted at position ${this.insertionInner + 1}! All kitties up to position ${this.insertionOuter} are now sorted!`);
-        
-        this.insertionOuter++;
-        this.insertionKey = null;
+
         this.currentStep++;
     }
     
@@ -669,6 +656,8 @@ calculateCatSize() {
     async swap(i, j) {
         const cat1 = document.getElementById(`cat-${i}`);
         const cat2 = document.getElementById(`cat-${j}`);
+
+        if (!cat1 || !cat2) return;
         
         // Get positions
         const pos1 = cat1.getBoundingClientRect();
@@ -677,7 +666,7 @@ calculateCatSize() {
         // Calculate distance
         const distance = pos2.left - pos1.left;
         
-        // Add swapping class
+        // Add swapping class for z-index
         cat1.classList.add('swapping');
         cat2.classList.add('swapping');
         
@@ -685,9 +674,18 @@ calculateCatSize() {
         cat1.style.transform = `translateX(${distance}px)`;
         cat2.style.transform = `translateX(${-distance}px)`;
         
-        // Wait for animation
+        // Wait for animation to finish (duration is 0.5s in css)
         await this.sleep(500);
         
+        // Reset styles before re-render to avoid jank
+        cat1.style.transform = '';
+        cat2.style.transform = '';
+        cat1.classList.remove('swapping');
+        cat2.classList.remove('swapping');
+
+        // A small delay to allow the DOM to update styles before we re-render everything.
+        await new Promise(r => setTimeout(r, 10));
+
         // Swap in array
         [this.cats[i], this.cats[j]] = [this.cats[j], this.cats[i]];
         
@@ -712,34 +710,34 @@ calculateCatSize() {
     }
     
     sleep(ms) {
-        const speeds = [2000, 1500, 1000, 500, 200];
-        return new Promise(resolve => setTimeout(resolve, speeds[this.speed - 1]));
+        // If ms is provided, use it. Otherwise, use the speed slider.
+        const duration = ms !== undefined ? ms : [2000, 1500, 1000, 500, 200][this.speed - 1];
+        return new Promise(resolve => setTimeout(resolve, duration));
     }
     
     async togglePlay() {
         this.isPlaying = !this.isPlaying;
         const playBtn = document.getElementById('play');
-        
+
         if (this.isPlaying) {
             playBtn.innerHTML = '<span>⏸️</span> Pause';
             document.getElementById('step').disabled = true;
-            
+
             while (this.isPlaying) {
                 await this.step();
-                await this.sleep(100);
-                
-                // Check if algorithm is complete
-                if (document.getElementById('step').disabled && !this.isPlaying) {
-                    break;
-                }
+                await this.sleep(); // Use speed from slider
             }
-            
-            this.isPlaying = false;
+
+            // After loop, either paused or finished
             playBtn.innerHTML = '<span>▶️</span> Auto Play';
-            document.getElementById('step').disabled = false;
+            // If play button is not disabled, it means we paused, not finished.
+            if (!document.getElementById('play').disabled) {
+                document.getElementById('step').disabled = false;
+            }
+
         } else {
-            playBtn.innerHTML = '<span>▶️</span> Auto Play';
-            document.getElementById('step').disabled = false;
+            // User clicked Pause. The `this.isPlaying` toggle above already set it to false,
+            // so the loop will terminate. The code after the loop handles button state.
         }
     }
     
@@ -754,7 +752,7 @@ calculateCatSize() {
         
         this.insertionOuter = 1;
         this.insertionInner = 0;
-        this.insertionKey = null;
+        this.insertionState = 'picking';
         
         this.mergeSteps = [];
         this.mergeStepIndex = 0;
